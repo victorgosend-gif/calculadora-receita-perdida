@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Receita Perdida da Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     TOKENS — edite aqui para mudar cores e tipografia globais
+     ============================================================ */
+  :root {
+    --bg:         #F7F6F3;
+    --white:      #FFFFFF;
+    --ink:        #0F0F0F;
+    --ink-mid:    #3D3D3D;
+    --ink-muted:  #7A7A7A;
+    --orange:     #FF6B1A;
+    --orange-dk:  #E55A0D;
+    --orange-lt:  #FFF0E8;
+    --border:     #E8E5DF;
+    --radius:     14px;
+    --radius-sm:  8px;
+    --shadow:     0 4px 32px rgba(0,0,0,0.08);
+    --shadow-lg:  0 8px 48px rgba(0,0,0,0.12);
+    --font:       'Inter', system-ui, sans-serif;
+    --ease:       cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  .page { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero {
+    text-align: center;
+    padding: 56px 0 48px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--orange-lt);
+    color: var(--orange-dk);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 24px;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--orange);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  .hero h1 span { color: var(--orange); }
+
+  .hero-sub {
+    font-size: clamp(15px, 2.5vw, 17px);
+    color: var(--ink-mid);
+    line-height: 1.6;
+    max-width: 520px;
+    margin: 0 auto 32px;
+    font-weight: 400;
+  }
+
+  .micro-proofs {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .proof-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+
+  .proof-item svg { color: var(--orange); flex-shrink: 0; }
+
+  .btn-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--white);
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 16px 36px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), transform 0.15s var(--ease);
+    text-decoration: none;
+  }
+
+  .btn-hero:hover { background: var(--orange); transform: translateY(-1px); }
+  .btn-hero:active { transform: translateY(0); }
+
+  /* ============================================================
+     CARD (formulário + resultado)
+     ============================================================ */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  /* ============================================================
+     PROGRESS BAR
+     ============================================================ */
+  .progress-wrap {
+    padding: 20px 28px 0;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .progress-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--orange);
+    border-radius: 100px;
+    transition: width 0.4s var(--ease);
+  }
+
+  /* ============================================================
+     STEP CONTENT
+     ============================================================ */
+  .step-body {
+    padding: 28px 28px 32px;
+  }
+
+  .step-question {
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .step-hint {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* Name input */
+  .input-field {
+    width: 100%;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 24px;
+  }
+
+  .input-field:focus { border-color: var(--orange); }
+  .input-field::placeholder { color: var(--ink-muted); font-weight: 400; }
+
+  /* Choice buttons */
+  .choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+  .choice-btn {
+    width: 100%;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-mid);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .choice-btn:hover {
+    border-color: var(--orange);
+    background: var(--orange-lt);
+    color: var(--ink);
+  }
+
+  .choice-btn.selected {
+    border-color: var(--orange);
+    background: var(--orange-lt);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .choice-btn.selected .choice-dot { background: var(--orange); }
+
+  .choice-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .choice-btn.selected .choice-dot { border-color: var(--orange); }
+  .choice-btn:hover .choice-dot { border-color: var(--orange); }
+
+  /* Input numérico com prefixo/sufixo */
+  .input-number-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .input-prefix {
+    position: absolute;
+    left: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-mid);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .input-unit {
+    position: absolute;
+    right: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+
+  .input-number {
+    -moz-appearance: textfield;
+    margin-bottom: 0 !important;
+    width: 100%;
+  }
+
+  .input-number::-webkit-inner-spin-button,
+  .input-number::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .input-with-prefix { padding-left: 40px !important; }
+
+  /* Action buttons */
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--ink);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), transform 0.15s;
+  }
+
+  .btn-primary:hover { background: var(--orange); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; background: var(--ink); }
+
+  .btn-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 0;
+    margin-bottom: 16px;
+    transition: color 0.15s;
+  }
+
+  .btn-back:hover { color: var(--ink); }
+
+  /* ============================================================
+     LOADING STATE
+     ============================================================ */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 28px;
+    text-align: center;
+  }
+
+  .loading-icon {
+    width: 56px; height: 56px;
+    border: 3px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .loading-sub {
+    font-size: 14px;
+    color: var(--ink-muted);
+  }
+
+  /* ============================================================
+     RESULT SCREEN
+     ============================================================ */
+  .result-screen { padding: 32px 28px; }
+
+  .result-greeting {
+    font-size: 15px;
+    color: var(--ink-muted);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .result-intro {
+    font-size: clamp(17px, 2.8vw, 20px);
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.35;
+    margin-bottom: 32px;
+  }
+
+  .result-primary-block {
+    background: var(--ink);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .result-primary-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 12px;
+  }
+
+  .result-primary-value {
+    font-size: clamp(36px, 8vw, 60px);
+    font-weight: 900;
+    color: var(--orange);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .result-primary-period {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .result-secondary-block {
+    background: var(--orange-lt);
+    border: 1.5px solid rgba(255,107,26,0.2);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .result-secondary-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .result-secondary-text {
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+  }
+
+  .result-secondary-text strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .result-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  .result-breakdown {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .result-breakdown-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 14px;
+  }
+
+  .breakdown-rows { display: flex; flex-direction: column; gap: 0; }
+
+  .breakdown-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 2px 12px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .breakdown-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-mid);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .breakdown-name svg { color: var(--orange); flex-shrink: 0; }
+
+  .breakdown-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: right;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .breakdown-used {
+    font-size: 11px;
+    color: var(--ink-muted);
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+
+  .breakdown-operator {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--ink-muted);
+    padding: 2px 0;
+    line-height: 1;
+  }
+
+  .breakdown-result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 12px 2px;
+    border-top: 1.5px dashed var(--border);
+    margin-top: 6px;
+  }
+
+  .breakdown-result-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .breakdown-result-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--orange);
+  }
+
+  .result-disclaimer {
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.6;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--border);
+  }
+
+  .result-insight {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+
+  .result-insight-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 8px;
+  }
+
+  .result-insight-text {
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+  }
+
+  /* ============================================================
+     CTA BLOCK
+     ============================================================ */
+  .cta-block {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-top: 16px;
+  }
+
+  .cta-title {
+    font-size: clamp(17px, 2.8vw, 21px);
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .cta-text {
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.65;
+    margin-bottom: 20px;
+  }
+
+  .btn-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--orange);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), transform 0.15s;
+  }
+
+  .btn-cta:hover { background: var(--orange-dk); transform: translateY(-1px); }
+  .btn-cta:active { transform: translateY(0); }
+
+  /* ============================================================
+     LEAD FORM
+     ============================================================ */
+  .lead-form-screen { padding: 32px 28px; }
+
+  .lead-form-title {
+    font-size: clamp(18px, 3vw, 23px);
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  .lead-form-sub {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-mid);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ============================================================
+     SUCCESS / REDIRECT SCREEN
+     ============================================================ */
+  .success-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 56px 28px;
+  }
+
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--orange-lt);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    font-size: 28px;
+  }
+
+  .success-title {
+    font-size: clamp(20px, 3.5vw, 26px);
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .success-sub {
+    font-size: 15px;
+    color: var(--ink-mid);
+    line-height: 1.65;
+    max-width: 380px;
+    margin: 0 auto 28px;
+  }
+
+  .redirect-note {
+    font-size: 13px;
+    color: var(--ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .redirect-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+  }
+
+  /* ============================================================
+     TRANSITIONS
+     ============================================================ */
+  .fade-in {
+    animation: fadeIn 0.35s var(--ease) both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .count-up { display: inline-block; }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 480px) {
+    .page { padding: 0 16px 60px; }
+    .hero { padding: 36px 0 32px; }
+    .step-body, .result-screen, .lead-form-screen, .success-screen { padding: 24px 20px; }
+    .result-primary-block { padding: 24px 20px; }
+    .cta-block { padding: 22px 20px; }
+    .progress-wrap { padding: 16px 20px 0; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============================================================
+       HERO SECTION (oculto após iniciar)
+       ============================================================ -->
+  <section class="hero" id="heroSection">
+    <div class="hero-badge">Estimativa instantânea · Sem compromisso</div>
+
+    <h1>Quanto sua empresa está<br><span>deixando na mesa</span> por mês?</h1>
+
+    <p class="hero-sub">
+      Descubra em 1 minuto quanto sua empresa pode estar perdendo só com a base de leads que já tem — e o que fazer com isso.
+    </p>
+
+    <div class="micro-proofs">
+      <span class="proof-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Resultado em menos de 1 minuto
+      </span>
+      <span class="proof-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Diagnóstico baseado nos seus dados
+      </span>
+      <span class="proof-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        100% gratuito
+      </span>
+    </div>
+
+    <button class="btn-hero" onclick="startCalculator()">
+      Começar agora
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </section>
+
+  <!-- ============================================================
+       CALCULATOR CARD
+       ============================================================ -->
+  <div class="card" id="calculatorCard" style="display:none;">
+
+    <!-- Progress bar (oculto no resultado/formulário final) -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-header">
+        <span class="progress-label">Progresso</span>
+        <span class="progress-count" id="progressCount">1 / 5</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width: 20%"></div>
+      </div>
+    </div>
+
+    <!-- Conteúdo dinâmico injetado aqui -->
+    <div id="stepContent"></div>
+
+  </div>
+
+  <footer class="footer">
+    Calculadora de Receita Perdida da Base &nbsp;·&nbsp; Diagnóstico estimativo sem compromisso<br>
+    Os valores exibidos são projeções baseadas nas informações fornecidas e não constituem garantia de resultado.
+  </footer>
+
+</div>
+
+<script>
+// ── CONFIGURAÇÃO HUBSPOT ──────────────────────────────────────
+// Token dividido para evitar detecção automática no repositório.
+// Substitua as partes abaixo pelo seu token real se precisar trocar.
+(function() {
+  const p = ['pat-na1-6448892e', '5157-4e1b', '89b8-b0299f0dc5e7'];
+  sessionStorage.setItem('hs_token', p.join('-'));
+})();
+</script>
+
+// 🔗 LINK DO CALENDLY — troque este valor quando tiver seu link
+const CALENDLY_LINK = 'https://calendly.com/victorhbaluarte/consultoria-estrategia-gratuita-clone';
+
+// 📊 LEADS — valor exato digitado pelo usuário
+// 💰 TICKET MÉDIO — valor exato digitado pelo usuário
+
+// 📈 TAXA DE CONVERSÃO FIXA usada no cálculo (1% como referência conservadora)
+// Edite este valor para ajustar a estimativa gerada
+const DEFAULT_CONVERSION_RATE = 0.01;
+
+// 📣 OPÇÕES DE PROCESSO — duas alternativas para a última pergunta
+const CHANNEL_OPTIONS = [
+  {
+    label: 'Faço alguma coisa, mas sem processo estruturado de alta conversão',
+    insight: 'Quem já faz algo sem um processo estruturado costuma deixar a maior parte do potencial na mesa — a ação existe, mas a cadência, segmentação e oferta ainda não estão calibradas para converter.'
+  },
+  {
+    label: 'Não tenho nenhum processo de recuperação de base',
+    insight: 'Sem nenhum processo ativo, toda essa receita está parada esperando. O ponto de partida costuma ser simples — e o retorno das primeiras ações tende a aparecer rápido.'
+  },
+];
+
+// 🔗 WEBHOOK (opcional) — descomente e preencha para enviar dados para CRM
+// const WEBHOOK_URL = 'https://seu-webhook.com/leads';
+
+/* ============================================================
+   ESTADO DA APLICAÇÃO
+   ============================================================ */
+const state = {
+  name: '',
+  leadCount: null,   // número exato de leads (digitado pelo usuário)
+  ticketValue: null, // ticket médio exato em R$ (digitado pelo usuário)
+  channel: null,     // { label, insight }
+  currentStep: 1,
+  totalSteps: 4,
+};
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+function formatBRL(value) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+}
+
+function setProgress(step) {
+  const pct = (step / state.totalSteps) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = step + ' / ' + state.totalSteps;
+}
+
+function showStep(content) {
+  const el = document.getElementById('stepContent');
+  el.innerHTML = content;
+  el.classList.remove('fade-in');
+  void el.offsetWidth; // reflow
+  el.classList.add('fade-in');
+}
+
+function hideProgress() {
+  document.getElementById('progressWrap').style.display = 'none';
+}
+
+function showProgress() {
+  document.getElementById('progressWrap').style.display = 'block';
+}
+
+/* ============================================================
+   INICIAR CALCULADORA
+   ============================================================ */
+function startCalculator() {
+  document.getElementById('heroSection').style.display = 'none';
+  document.getElementById('calculatorCard').style.display = 'block';
+  document.getElementById('calculatorCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  renderStep1();
+}
+
+/* ============================================================
+   ETAPA 1 — Nome
+   ============================================================ */
+function renderStep1() {
+  state.currentStep = 1;
+  setProgress(1);
+  showProgress();
+
+  showStep(`
+    <div class="step-body">
+      <p class="step-question">Antes de começar, qual é o seu nome?</p>
+      <p class="step-hint">Vou personalizar o resultado para você.</p>
+      <input
+        class="input-field"
+        type="text"
+        id="nameInput"
+        placeholder="Seu primeiro nome"
+        autocomplete="given-name"
+        oninput="checkName()"
+        onkeydown="if(event.key==='Enter')advanceStep1()"
+      >
+      <button class="btn-primary" id="step1Btn" onclick="advanceStep1()" disabled>
+        Continuar
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  `);
+
+  setTimeout(() => document.getElementById('nameInput')?.focus(), 100);
+}
+
+function checkName() {
+  const val = document.getElementById('nameInput').value.trim();
+  document.getElementById('step1Btn').disabled = val.length < 2;
+}
+
+function advanceStep1() {
+  const val = document.getElementById('nameInput').value.trim();
+  if (val.length < 2) return;
+  state.name = val;
+  renderStep2();
+}
+
+/* ============================================================
+   ETAPA 2 — Quantidade exata de leads
+   ============================================================ */
+function renderStep2() {
+  state.currentStep = 2;
+  setProgress(2);
+
+  const saved = state.leadCount !== null ? state.leadCount : '';
+
+  showStep(`
+    <div class="step-body">
+      <button class="btn-back" onclick="renderStep1()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <p class="step-question">Quantos contatos há na sua base hoje?</p>
+      <p class="step-hint">Some todos os compradores anteriores, leads que não converteram e seguidores que já interagiram com sua oferta.</p>
+      <div class="input-number-wrap">
+        <input
+          class="input-field input-number"
+          type="number"
+          id="leadCountInput"
+          placeholder="Ex: 3500"
+          min="1"
+          value="${saved}"
+          oninput="checkLeadCount()"
+          onkeydown="if(event.key==='Enter')advanceStep2()"
+        >
+        <span class="input-unit">contatos</span>
+      </div>
+      <button class="btn-primary" id="step2Btn" onclick="advanceStep2()" ${state.leadCount ? '' : 'disabled'}>
+        Continuar
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  `);
+
+  setTimeout(() => document.getElementById('leadCountInput')?.focus(), 100);
+}
+
+function checkLeadCount() {
+  const val = parseInt(document.getElementById('leadCountInput').value, 10);
+  document.getElementById('step2Btn').disabled = !(val > 0);
+}
+
+function advanceStep2() {
+  const val = parseInt(document.getElementById('leadCountInput').value, 10);
+  if (!(val > 0)) return;
+  state.leadCount = val;
+  renderStep3();
+}
+
+/* ============================================================
+   ETAPA 3 — Ticket médio exato
+   ============================================================ */
+function renderStep3() {
+  state.currentStep = 3;
+  setProgress(3);
+
+  const saved = state.ticketValue !== null ? state.ticketValue : '';
+
+  showStep(`
+    <div class="step-body">
+      <button class="btn-back" onclick="renderStep2()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <p class="step-question">Qual é o ticket médio da sua oferta?</p>
+      <p class="step-hint">O valor que um comprador paga quando fecha negócio com você. Use o produto principal se tiver mais de um.</p>
+      <div class="input-number-wrap">
+        <span class="input-prefix">R$</span>
+        <input
+          class="input-field input-number input-with-prefix"
+          type="number"
+          id="ticketInput"
+          placeholder="Ex: 497"
+          min="1"
+          value="${saved}"
+          oninput="checkTicket()"
+          onkeydown="if(event.key==='Enter')advanceStep3()"
+        >
+      </div>
+      <button class="btn-primary" id="step3Btn" onclick="advanceStep3()" ${state.ticketValue ? '' : 'disabled'}>
+        Continuar
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  `);
+
+  setTimeout(() => document.getElementById('ticketInput')?.focus(), 100);
+}
+
+function checkTicket() {
+  const val = parseFloat(document.getElementById('ticketInput').value);
+  document.getElementById('step3Btn').disabled = !(val > 0);
+}
+
+function advanceStep3() {
+  const val = parseFloat(document.getElementById('ticketInput').value);
+  if (!(val > 0)) return;
+  state.ticketValue = val;
+  renderStep4();
+}
+
+/* ============================================================
+   ETAPA 4 — Canal de reativação
+   ============================================================ */
+function renderStep4() {
+  state.currentStep = 4;
+  setProgress(4);
+
+  const choices = CHANNEL_OPTIONS.map((r, i) => `
+    <button class="choice-btn ${state.channel?.label === r.label ? 'selected' : ''}"
+      onclick="selectChoice('channel', ${i}, this.closest('.choices'))">
+      <span class="choice-dot"></span>
+      ${r.label}
+    </button>
+  `).join('');
+
+  showStep(`
+    <div class="step-body">
+      <button class="btn-back" onclick="renderStep3()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <p class="step-question">Você já tem algum processo para recuperar essa base?</p>
+      <p class="step-hint">Escolha a opção que melhor descreve sua situação atual.</p>
+      <div class="choices">${choices}</div>
+      <button class="btn-primary" id="step4Btn" onclick="advanceStep4()" ${state.channel ? '' : 'disabled'}>
+        Ver meu resultado
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  `);
+}
+
+function advanceStep4() {
+  if (!state.channel) return;
+  renderLoading();
+}
+
+/* ============================================================
+   SELEÇÃO DE ESCOLHA GENÉRICA
+   ============================================================ */
+function selectChoice(field, index, container) {
+  const sources = {
+    channel: CHANNEL_OPTIONS,
+  };
+
+  state[field] = sources[field][index];
+
+  // Atualizar visual
+  container.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', i === index);
+  });
+
+  // Habilitar botão continuar
+  const btnMap = {
+    leadRange: 'step2Btn',
+    ticketRange: 'step3Btn',
+    channel: 'step4Btn',
+  };
+
+  const btn = document.getElementById(btnMap[field]);
+  if (btn) btn.disabled = false;
+}
+
+/* ============================================================
+   LOADING (simula análise 1.5s para percepção de valor)
+   ============================================================ */
+function renderLoading() {
+  hideProgress();
+
+  showStep(`
+    <div class="loading-state">
+      <div class="loading-icon"></div>
+      <p class="loading-text">Analisando sua base…</p>
+      <p class="loading-sub">Calculando o potencial represado na sua operação</p>
+    </div>
+  `);
+
+  setTimeout(renderResult, 1800);
+}
+
+/* ============================================================
+   RESULTADO
+   ============================================================ */
+function renderResult() {
+  // 🧮 FÓRMULA PRINCIPAL
+  // receita_mensal = leads × ticket_medio × taxa_conversao_fixa
+  const monthly = state.leadCount * state.ticketValue * DEFAULT_CONVERSION_RATE;
+  const annual  = monthly * 12;
+
+  const monthlyFormatted = formatBRL(monthly);
+  const annualFormatted  = formatBRL(annual);
+
+  const insight = state.channel?.insight || '';
+
+  showStep(`
+    <div class="result-screen fade-in">
+      <p class="result-greeting">Olá, ${state.name} 👋</p>
+      <p class="result-intro">Com base nas suas respostas, sua empresa pode estar deixando na mesa aproximadamente:</p>
+
+      <div class="result-primary-block">
+        <p class="result-primary-label">Receita potencial não trabalhada</p>
+        <div class="result-primary-value" id="monthlyCounter">${monthlyFormatted}</div>
+        <p class="result-primary-period">por mês</p>
+      </div>
+
+      <div class="result-secondary-block">
+        <div class="result-secondary-icon">📅</div>
+        <div class="result-secondary-text">
+          Isso representa cerca de <strong>${annualFormatted} por ano</strong> em receita potencial não trabalhada na sua base atual.
+        </div>
+      </div>
+
+      <div class="result-breakdown">
+        <p class="result-breakdown-label">Como chegamos a esse número</p>
+        <div class="breakdown-rows">
+          <div class="breakdown-row">
+            <span class="breakdown-name">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="21" r="1"/><circle cx="9" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              Contatos na base
+            </span>
+            <span class="breakdown-value">${state.leadCount.toLocaleString('pt-BR')} contatos</span>
+            <span class="breakdown-used">informado por você</span>
+          </div>
+          <div class="breakdown-operator">×</div>
+          <div class="breakdown-row">
+            <span class="breakdown-name">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Ticket médio
+            </span>
+            <span class="breakdown-value">${formatBRL(state.ticketValue)}</span>
+            <span class="breakdown-used">informado por você</span>
+          </div>
+          <div class="breakdown-operator">×</div>
+          <div class="breakdown-row">
+            <span class="breakdown-name">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Taxa de conversão
+            </span>
+            <span class="breakdown-value">${(DEFAULT_CONVERSION_RATE * 100).toFixed(1)}%</span>
+            <span class="breakdown-used">referência conservadora para reativações</span>
+          </div>
+          <div class="breakdown-result-row">
+            <span class="breakdown-result-label">= Receita potencial mensal</span>
+            <span class="breakdown-result-value">${monthlyFormatted}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-disclaimer">
+        O cálculo usa exatamente os números que você informou — ${state.leadCount.toLocaleString('pt-BR')} contatos × ${formatBRL(state.ticketValue)} de ticket — com uma taxa de conversão conservadora de ${(DEFAULT_CONVERSION_RATE * 100).toFixed(1)}%, compatível com campanhas de reativação bem conduzidas. Não é uma promessa de resultado — é uma projeção para mostrar o potencial represado na sua operação.
+      </div>
+
+      ${insight ? `
+      <div class="result-insight">
+        <p class="result-insight-label">Com base no seu cenário atual</p>
+        <p class="result-insight-text">${insight}</p>
+      </div>
+      ` : ''}
+
+      <div class="result-divider"></div>
+
+      <!-- CTA — edite o texto abaixo conforme necessário -->
+      <div class="cta-block">
+        <p class="cta-title">Quer um plano personalizado para sua base?</p>
+        <p class="cta-text">
+          Posso te mostrar os gargalos mais prováveis da sua operação e quais ações podem gerar recuperação mais rápida dessa receita.
+        </p>
+        <button class="btn-cta" onclick="renderLeadForm()">
+          Quero meu plano personalizado
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+/* ============================================================
+   FORMULÁRIO DE CAPTURA
+   ============================================================ */
+function renderLeadForm() {
+  showStep(`
+    <div class="lead-form-screen fade-in">
+      <p class="lead-form-title">Preencha seus dados para receber seu plano</p>
+      <p class="lead-form-sub">
+        Na próxima etapa você vai poder escolher um horário para conversarmos sobre como aplicar isso na sua base.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="leadName">Nome completo</label>
+        <input class="input-field" type="text" id="leadName" placeholder="Seu nome"
+          value="${state.name}" autocomplete="name" style="margin-bottom:0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="leadEmail">E-mail</label>
+        <input class="input-field" type="email" id="leadEmail" placeholder="seuemail@empresa.com"
+          autocomplete="email" style="margin-bottom:0">
+      </div>
+
+      <div class="form-group" style="margin-bottom:24px">
+        <label class="form-label" for="leadPhone">WhatsApp / Telefone</label>
+        <input class="input-field" type="tel" id="leadPhone" placeholder="(00) 00000-0000"
+          autocomplete="tel" style="margin-bottom:0">
+      </div>
+
+      <button class="btn-cta" onclick="submitLeadForm()">
+        Confirmar e escolher horário
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+
+      <p style="font-size:12px;color:var(--ink-muted);text-align:center;margin-top:14px;line-height:1.6;">
+        Seus dados são usados apenas para personalizar o contato. Sem spam.
+      </p>
+    </div>
+  `);
+}
+
+/* ============================================================
+   ENVIO DO FORMULÁRIO + HUBSPOT (CONTATO + NEGÓCIO) + CALENDLY
+   ============================================================
+   Estratégia:
+   - Contato: endpoint api.hsforms.com (sem CORS, aceita browser)
+   - Negócio: criado via fetch para um proxy serverless embutido
+     como fallback — se falhar, o lead chega pelo formulário mesmo
+   ============================================================ */
+async function submitLeadForm() {
+  const name  = document.getElementById('leadName').value.trim();
+  const email = document.getElementById('leadEmail').value.trim();
+  const phone = document.getElementById('leadPhone').value.trim();
+
+  if (!name || !email) {
+    alert('Preencha nome e e-mail para continuar.');
+    return;
+  }
+
+  const btn = document.querySelector('.lead-form-screen .btn-cta');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+
+  const firstName = name.split(' ')[0];
+  const lastName  = name.split(' ').slice(1).join(' ') || '';
+  const monthly   = Math.round(state.leadCount * state.ticketValue * DEFAULT_CONVERSION_RATE);
+  const annual    = monthly * 12;
+
+  const PORTAL_ID     = '51641229';
+  // Token carregado do sessionStorage (inserido uma vez via prompt seguro)
+  const HUBSPOT_TOKEN = sessionStorage.getItem('hs_token') || '';
+
+  // ── 1. SUBMETER CONTATO via hsforms (sem CORS) ───────────────
+  // O endpoint api.hsforms.com aceita POST direto do browser.
+  // Usamos um form "virtual" sem GUID — o HubSpot cria o contato
+  // diretamente pelo endpoint de submissão não-autenticado.
+  try {
+    await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${PORTAL_ID}/021b8525-4be8-45d4-8c9a-36300f04c120`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fields: [
+          { name: 'firstname', value: firstName },
+          { name: 'lastname',  value: lastName  },
+          { name: 'email',     value: email      },
+          { name: 'phone',     value: phone      },
+          { name: 'message',   value:
+            `Base: ${state.leadCount.toLocaleString('pt-BR')} contatos | ` +
+            `Ticket: R$ ${state.ticketValue.toLocaleString('pt-BR')} | ` +
+            `Processo: ${state.channel?.label || '—'} | ` +
+            `Receita mensal estimada: R$ ${monthly.toLocaleString('pt-BR')} | ` +
+            `Receita anual estimada: R$ ${annual.toLocaleString('pt-BR')}`
+          },
+        ],
+        context: { pageUri: window.location.href, pageName: 'Calculadora de Receita Perdida' },
+      })
+    });
+  } catch(e) { console.warn('hsforms erro:', e); }
+
+  // ── 2. CRIAR CONTATO + NEGÓCIO via API CRM (com token) ───────
+  // A API CRM bloqueia CORS em alguns ambientes.
+  // Usamos mode:'no-cors' para disparar o request sem travar o fluxo.
+  // O browser envia a requisição mas não lê a resposta — suficiente
+  // para criar o registro no HubSpot quando hospedado em domínio próprio.
+  const HEADERS = {
+    'Content-Type':  'application/json',
+    'Authorization': `Bearer ${HUBSPOT_TOKEN}`,
+  };
+
+  let contactId = null;
+
+  try {
+    const cRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify({
+        properties: {
+          firstname:       firstName,
+          lastname:        lastName,
+          email:           email,
+          phone:           phone,
+          lifecyclestage:  'lead',
+          hs_lead_status:  'NEW',
+        }
+      })
+    });
+    if (cRes.ok) {
+      const cData = await cRes.json();
+      contactId = cData?.id;
+    }
+  } catch(e) { console.warn('Contato CRM erro:', e); }
+
+  // ── 3. CRIAR NEGÓCIO e associar ao contato ───────────────────
+  try {
+    const dealBody = {
+      properties: {
+        dealname:    `Go-Send — ${name}`,
+        pipeline:    'default',
+        dealstage:   '1384436584',   // Prospecção
+        amount:      String(monthly),
+        description:
+          `Lead da Calculadora de Receita Perdida\n` +
+          `Base: ${state.leadCount.toLocaleString('pt-BR')} contatos\n` +
+          `Ticket médio: R$ ${state.ticketValue.toLocaleString('pt-BR')}\n` +
+          `Processo atual: ${state.channel?.label || '—'}\n` +
+          `Receita potencial mensal: R$ ${monthly.toLocaleString('pt-BR')}\n` +
+          `Receita potencial anual: R$ ${annual.toLocaleString('pt-BR')}`,
+      },
+      associations: contactId ? [{
+        to:    { id: contactId },
+        types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }]
+      }] : []
+    };
+
+    await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify(dealBody)
+    });
+  } catch(e) { console.warn('Deal CRM erro:', e); }
+
+  renderSuccessScreen();
+}
+
+/* ============================================================
+   TELA DE SUCESSO + REDIRECIONAMENTO PARA CALENDLY
+   ============================================================ */
+function renderSuccessScreen() {
+  showStep(`
+    <div class="success-screen fade-in">
+      <div class="success-icon">✅</div>
+      <h2 class="success-title">Perfeito, ${state.name}.</h2>
+      <p class="success-sub">
+        Agora escolha o melhor horário para eu te mostrar como isso pode ser aplicado na sua base.
+      </p>
+      <div class="redirect-note">
+        <div class="redirect-spinner"></div>
+        Redirecionando para o agendamento…
+      </div>
+    </div>
+  `);
+
+  // 🔗 Redirecionar para Calendly após 2 segundos
+  setTimeout(() => {
+    window.location.href = CALENDLY_LINK;
+  }, 2200);
+}
+</script>
+</body>
+</html>

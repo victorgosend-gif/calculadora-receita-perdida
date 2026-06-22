@@ -645,8 +645,28 @@
     transition: background 0.2s var(--ease), transform 0.15s;
   }
 
-  .btn-cta:hover { background: var(--orange-dk); transform: translateY(-1px); }
-  .btn-cta:active { transform: translateY(0); }
+  .btn-whatsapp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    background: #25D366;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s var(--ease), transform 0.15s;
+  }
+
+  .btn-whatsapp:hover { background: #1ebe5a; transform: translateY(-1px); }
+  .btn-whatsapp:active { transform: translateY(0); }
+  .btn-whatsapp:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   /* ============================================================
      LEAD FORM
@@ -1283,9 +1303,14 @@ function renderLeadForm() {
           autocomplete="tel" style="margin-bottom:0">
       </div>
 
-      <button class="btn-cta" onclick="submitLeadForm()">
-        Confirmar e escolher horário
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      <button class="btn-cta" onclick="submitLeadForm('meeting')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Agendar uma conversa
+      </button>
+
+      <button class="btn-whatsapp" onclick="submitLeadForm('whatsapp')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Falar pelo WhatsApp
       </button>
 
       <p style="font-size:12px;color:var(--ink-muted);text-align:center;margin-top:14px;line-height:1.6;">
@@ -1303,7 +1328,7 @@ function renderLeadForm() {
    - Negócio: criado via fetch para um proxy serverless embutido
      como fallback — se falhar, o lead chega pelo formulário mesmo
    ============================================================ */
-async function submitLeadForm() {
+async function submitLeadForm(destination = 'meeting') {
   const name  = document.getElementById('leadName').value.trim();
   const email = document.getElementById('leadEmail').value.trim();
   const phone = document.getElementById('leadPhone').value.trim();
@@ -1322,103 +1347,38 @@ async function submitLeadForm() {
   const annual    = monthly * 12;
 
   // Salva dados no state para pré-preencher o agendamento
-  state._leadFirstName = firstName;
-  state._leadLastName  = lastName;
-  state._leadEmail     = email;
-  state._leadPhone     = phone;
+  state._leadFirstName  = firstName;
+  state._leadLastName   = lastName;
+  state._leadEmail      = email;
+  state._leadPhone      = phone;
+  state._destination    = destination;
 
   const PORTAL_ID     = '51641229';
   // Token carregado do sessionStorage (inserido uma vez via prompt seguro)
   const HUBSPOT_TOKEN = sessionStorage.getItem('hs_token') || '';
 
-  // ── 1. SUBMETER CONTATO via hsforms (sem CORS) ───────────────
-  // O endpoint api.hsforms.com aceita POST direto do browser.
-  // Usamos um form "virtual" sem GUID — o HubSpot cria o contato
-  // diretamente pelo endpoint de submissão não-autenticado.
+  // ── ENVIAR PARA PROXY (cria contato + negócio no HubSpot) ───
+  // O proxy roda no servidor — sem CORS, sem bloqueio
+  // URL do proxy Netlify (atualizada após deploy)
+  const PROXY_URL = 'https://gosend-hub.netlify.app/.netlify/functions/hubspot';
+
   try {
-    await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${PORTAL_ID}/021b8525-4be8-45d4-8c9a-36300f04c120`, {
-      method: 'POST',
+    await fetch(PROXY_URL, {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fields: [
-          { name: 'firstname', value: firstName },
-          { name: 'lastname',  value: lastName  },
-          { name: 'email',     value: email      },
-          { name: 'phone',     value: phone      },
-          { name: 'message',   value:
-            `Base: ${state.leadCount.toLocaleString('pt-BR')} contatos | ` +
-            `Ticket: R$ ${state.ticketValue.toLocaleString('pt-BR')} | ` +
-            `Processo: ${state.channel?.label || '—'} | ` +
-            `Receita mensal estimada: R$ ${monthly.toLocaleString('pt-BR')} | ` +
-            `Receita anual estimada: R$ ${annual.toLocaleString('pt-BR')}`
-          },
-        ],
-        context: { pageUri: window.location.href, pageName: 'Calculadora de Receita Perdida' },
+        firstName,
+        lastName,
+        email,
+        phone,
+        leadCount:  state.leadCount,
+        ticketValue: state.ticketValue,
+        processo:   state.channel?.label || '',
+        monthly,
+        annual,
       })
     });
-  } catch(e) { console.warn('hsforms erro:', e); }
-
-  // ── 2. CRIAR CONTATO + NEGÓCIO via API CRM (com token) ───────
-  // A API CRM bloqueia CORS em alguns ambientes.
-  // Usamos mode:'no-cors' para disparar o request sem travar o fluxo.
-  // O browser envia a requisição mas não lê a resposta — suficiente
-  // para criar o registro no HubSpot quando hospedado em domínio próprio.
-  const HEADERS = {
-    'Content-Type':  'application/json',
-    'Authorization': `Bearer ${HUBSPOT_TOKEN}`,
-  };
-
-  let contactId = null;
-
-  try {
-    const cRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({
-        properties: {
-          firstname:       firstName,
-          lastname:        lastName,
-          email:           email,
-          phone:           phone,
-          lifecyclestage:  'lead',
-          hs_lead_status:  'NEW',
-        }
-      })
-    });
-    if (cRes.ok) {
-      const cData = await cRes.json();
-      contactId = cData?.id;
-    }
-  } catch(e) { console.warn('Contato CRM erro:', e); }
-
-  // ── 3. CRIAR NEGÓCIO e associar ao contato ───────────────────
-  try {
-    const dealBody = {
-      properties: {
-        dealname:    `Go-Send — ${name}`,
-        pipeline:    'default',
-        dealstage:   '1384436584',   // Prospecção
-        amount:      String(monthly),
-        description:
-          `Lead da Calculadora de Receita Perdida\n` +
-          `Base: ${state.leadCount.toLocaleString('pt-BR')} contatos\n` +
-          `Ticket médio: R$ ${state.ticketValue.toLocaleString('pt-BR')}\n` +
-          `Processo atual: ${state.channel?.label || '—'}\n` +
-          `Receita potencial mensal: R$ ${monthly.toLocaleString('pt-BR')}\n` +
-          `Receita potencial anual: R$ ${annual.toLocaleString('pt-BR')}`,
-      },
-      associations: contactId ? [{
-        to:    { id: contactId },
-        types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }]
-      }] : []
-    };
-
-    await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify(dealBody)
-    });
-  } catch(e) { console.warn('Deal CRM erro:', e); }
+  } catch(e) { console.warn('Proxy erro:', e); }
 
   renderSuccessScreen();
 }
@@ -1441,22 +1401,30 @@ function renderSuccessScreen() {
     </div>
   `);
 
-  // 🔗 Monta URL com dados do lead pré-preenchidos
-  // O HubSpot Meetings lê esses parâmetros e preenche o formulário automaticamente
+  // 🔗 Redireciona para agendamento ou WhatsApp com dados pré-preenchidos
   setTimeout(() => {
-    const firstName = state._leadFirstName || state.name.split(' ')[0];
-    const lastName  = state._leadLastName  || state.name.split(' ').slice(1).join(' ') || '';
-    const email     = state._leadEmail     || '';
-    const phone     = state._leadPhone     || '';
-
-    const params = new URLSearchParams({
-      firstname: firstName,
-      lastname:  lastName,
-      email:     email,
-      phone:     phone,
-    });
-
-    window.location.href = `${CALENDLY_LINK}?${params.toString()}`;
+    if (state._destination === 'whatsapp') {
+      // Monta mensagem pré-preenchida para o WhatsApp
+      const monthly = Math.round(state.leadCount * state.ticketValue * DEFAULT_CONVERSION_RATE);
+      const msg = encodeURIComponent(
+        `Olá Victor! Acabei de usar a Calculadora de Receita Perdida da Go-Send.\n\n` +
+        `Meu nome é ${state._leadFirstName} ${state._leadLastName}.\n` +
+        `Base: ${state.leadCount.toLocaleString('pt-BR')} contatos\n` +
+        `Ticket médio: R$ ${state.ticketValue.toLocaleString('pt-BR')}\n` +
+        `Receita potencial mensal: R$ ${monthly.toLocaleString('pt-BR')}\n\n` +
+        `Quero entender como recuperar essa receita.`
+      );
+      window.location.href = `https://wa.me/5541992268556?text=${msg}`;
+    } else {
+      // Agendamento HubSpot com dados pré-preenchidos
+      const params = new URLSearchParams({
+        firstname: state._leadFirstName || '',
+        lastname:  state._leadLastName  || '',
+        email:     state._leadEmail     || '',
+        phone:     state._leadPhone     || '',
+      });
+      window.location.href = `${CALENDLY_LINK}?${params.toString()}`;
+    }
   }, 2200);
 }
 </script>

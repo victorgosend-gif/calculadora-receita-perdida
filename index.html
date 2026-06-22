@@ -854,8 +854,9 @@
 </script>
 
 <script>
-// 🔗 LINK DO CALENDLY — troque este valor quando tiver seu link
-const CALENDLY_LINK = 'https://calendly.com/victorhbaluarte/consultoria-estrategia-gratuita-clone';
+// 🔗 LINK DE AGENDAMENTO HUBSPOT
+// Os parâmetros firstname, lastname, email e phone são preenchidos automaticamente
+const CALENDLY_LINK = 'https://meetings.hubspot.com/victor-baluarte';
 
 // 📊 LEADS — valor exato digitado pelo usuário
 // 💰 TICKET MÉDIO — valor exato digitado pelo usuário
@@ -1320,6 +1321,12 @@ async function submitLeadForm() {
   const monthly   = Math.round(state.leadCount * state.ticketValue * DEFAULT_CONVERSION_RATE);
   const annual    = monthly * 12;
 
+  // Salva dados no state para pré-preencher o agendamento
+  state._leadFirstName = firstName;
+  state._leadLastName  = lastName;
+  state._leadEmail     = email;
+  state._leadPhone     = phone;
+
   const PORTAL_ID     = '51641229';
   // Token carregado do sessionStorage (inserido uma vez via prompt seguro)
   const HUBSPOT_TOKEN = sessionStorage.getItem('hs_token') || '';
@@ -1417,7 +1424,7 @@ async function submitLeadForm() {
 }
 
 /* ============================================================
-   TELA DE SUCESSO + REDIRECIONAMENTO PARA CALENDLY
+   TELA DE SUCESSO + REDIRECIONAMENTO COM DADOS PRÉ-PREENCHIDOS
    ============================================================ */
 function renderSuccessScreen() {
   showStep(`
@@ -1434,9 +1441,22 @@ function renderSuccessScreen() {
     </div>
   `);
 
-  // 🔗 Redirecionar para Calendly após 2 segundos
+  // 🔗 Monta URL com dados do lead pré-preenchidos
+  // O HubSpot Meetings lê esses parâmetros e preenche o formulário automaticamente
   setTimeout(() => {
-    window.location.href = CALENDLY_LINK;
+    const firstName = state._leadFirstName || state.name.split(' ')[0];
+    const lastName  = state._leadLastName  || state.name.split(' ').slice(1).join(' ') || '';
+    const email     = state._leadEmail     || '';
+    const phone     = state._leadPhone     || '';
+
+    const params = new URLSearchParams({
+      firstname: firstName,
+      lastname:  lastName,
+      email:     email,
+      phone:     phone,
+    });
+
+    window.location.href = `${CALENDLY_LINK}?${params.toString()}`;
   }, 2200);
 }
 </script>
